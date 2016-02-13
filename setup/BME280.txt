@@ -1,0 +1,7 @@
+# 
+sudo apt-get install python-smbus i2c-tools
+
+# bme280 sample
+
+wget https://raw.githubusercontent.com/SWITCHSCIENCE/BME280/master/Python27/bme280_sample.py
+
