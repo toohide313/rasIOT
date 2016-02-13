@@ -1,0 +1,45 @@
+# LTE L02C setup
+sudo apt-get install screen wvdial eject
+
+
+# L02C change mode
+
+screen /dev/ttyUSB2
+ATZ
+AT%USBMODEM=0
+AT0
+[Ctrl-A] k  
+
+# L02C regist APN
+
+screen /dev/ttyUSB2
+AT+CGDCONT?      << check command
+
+AT+CGDCONT=1,"IP","dmm.com"
+
+AT0
+[Ctrl-A] k
+
+
+# config up  
+
+cp conf/wvdial.conf /etc/wvdial.conf
+chmod 640  /etc/wvdial.conf
+chown root:dialout /etc/wvdial.conf
+
+# kernel parameter
+
+sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
+sudo cp conf/ipforward.conf /etc/sysctl.d/ipforward.conf
+
+# systemd setup
+
+sudo cp sh/wvdialoop /usr/bin/wvdialoop
+sudo chmod +x /usr/bin/wvdialoop
+
+sudo cp conf/wvdialoop.service /etc/systemd/system/wvdialoop.service
+
+sudo systemctl enable wvdialoop.service
+sudo systemctl start wvdialoop.service
+

@@ -1,0 +1,12 @@
+[Unit]
+Description=WWAN auto-connect service
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+KillMode=none
+ExecStart=/usr/bin/wvdialoop
+
+[Install]
+WantedBy=multi-user.target
