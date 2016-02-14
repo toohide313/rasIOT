@@ -1,8 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-
-IO_NO = 16
+IO_NO = 17
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(IO_NO, GPIO.IN)
 stat = GPIO.input(IO_NO)
@@ -10,12 +9,15 @@ print "GPIO" + str (IO_NO) + " " + str ( stat )
 
 GPIO.setup(IO_NO, GPIO.OUT)
 if stat:
-	GPIO.output(IO_NO, False)
+	print "OFF->ON"
+	GPIO.output(IO_NO, GPIO.HIGH)
 else:
-	GPIO.output(IO_NO, True)
+	print "ON->OFF"
+	GPIO.output(IO_NO, GPIO.LOW)
 
 GPIO.setup(IO_NO, GPIO.IN)
 stat = GPIO.input(IO_NO)
 print "GPIO" + str (IO_NO) + " " + str ( stat )
 
 GPIO.cleanup()
+

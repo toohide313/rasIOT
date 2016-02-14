@@ -1,8 +1,9 @@
 #coding: utf-8
-
+import os
 import smbus
 import time
 from socket import gethostname
+from ConfigParser import SafeConfigParser
 
 bus_number  = 1
 i2c_address = 0x76
@@ -15,6 +16,39 @@ digH = []
 
 t_fine = 0.0
 
+def initGPIO(gpionum):
+        path = "/sys/class/gpio/gpio" + gpionum
+        if ( os.path.isdir(path) == 0 ):
+                print "gpio %s not setup" % gpionum
+                f = open('/sys/class/gpio/export', 'w')
+                f.write(str(gpionum))
+                f.close()
+        else:
+                return
+        fpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
+        if ( os.path.isfile(fpath) == 1 ):
+                f = open(fpath, 'w')
+                f.write("out")
+                f.close()
+
+def getGPIO(gpionum):
+        initGPIO(gpionum)
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
+        f = open(vpath , 'r')
+        status = f.readline()
+        status = status.rstrip()
+#       print "get %s" % gpionum
+#       print "val %s" % status
+        return status
+
+def setGPIO(gpionum,val):
+        initGPIO(gpionum)
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
+        f = open(vpath, 'w')
+        f.write(val)
+        f.close()
+#       print "set %s" % gpionum
+#       print "val %s" % val
 
 def writeReg(reg_address, data):
 	bus.write_byte_data(i2c_address,reg_address,data)
@@ -58,6 +92,20 @@ def get_calib_param():
 	for i in range(0,6):
 		if digH[i] & 0x8000:
 			digH[i] = (-digH[i] ^ 0xFFFF) + 1  
+
+def readGPIO():
+	filename = '/home/pi/rasIOT/conf/'+gethostname()+'.conf'
+
+	if not os.path.exists(filename):
+        	raise IOError(filename)
+
+	parser = SafeConfigParser()
+	parser.read(filename)
+	str=""
+	words = parser.get('gpio','gpio')
+	for word in words.split():
+		str = str + "&gpio"+word+"="+getGPIO(word)
+	return str
 
 def readData():
 	data = []
@@ -113,7 +161,7 @@ def compensate_P(adc_P):
 	pressure = pressure + ((v1 + v2 + digP[6]) / 16.0)  
 
 	# print "pressure : %7.2f hPa" % (pressure/100)
-	return "%4.f" % ( pressure / 100 )
+	return "%d" % ( pressure / 100 )
 
 def compensate_T(adc_T):
 	global t_fine
@@ -163,7 +211,7 @@ get_calib_param()
 
 if __name__ == '__main__':
 	try:
-		para = readData()
+		para = readData() + readGPIO()
 
 		import urllib2
 
@@ -177,10 +225,19 @@ if __name__ == '__main__':
 		param_str = '?node='+gethostname()+"&"+para
 		f = urllib2.urlopen( url_str + param_str )
 
-
-		print "get:"+url_str+param_str
+#		print "get:"+url_str+param_str
 		# 取得した内容を出力する
-		print f.read()
+#		print f.read()
+		cnt = 0
+		for str in f.readlines():
+			word = str.split()
+			cnt = cnt + 1
+#			print " %d " % cnt
+			if ( "gpio" in word[0] ) and ( len(word) == 2 ):
+				t = word[0][4:]
+#				print " %s " % word
+#				print " %s " % t
+				setGPIO(t,word[1])
 
 	except KeyboardInterrupt:
 		pass
