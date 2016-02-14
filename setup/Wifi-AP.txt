@@ -1,0 +1,28 @@
+#
+sudo apt-get install hostapd dnsmasq
+
+# set ip address
+
+sudo vi /etc/network/interfaces
+## modify wlan entrie
+
+#allow-hotplug wlan0
+#iface wlan0 inet manual
+#    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+#allow-hotplug wlan1
+#iface wlan1 inet manual
+#    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+allow-hotplug wlan0
+iface wlan0 inet static
+address 192.168.2.1
+netmask 255.255.255.0
+
+# config dnsmasq
+systemctl stop dnsmasq
+
+sudo cp conf/wifiap.conf /etc/dnsmasq.d/wifiap.conf
+systemctl start dnsmasq
+
+#config hostapd
+
