@@ -1,0 +1,3 @@
+sudo apt-get install usb-modeswitch
+
+sudo usb_modeswitch -v 0x1004 -p 0x618f --reset-usb
