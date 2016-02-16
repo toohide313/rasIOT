@@ -1,0 +1,17 @@
+# swap off
+
+free
+sudo systemctl stop    dphys-swapfile
+sudo systemctl disable dphys-swapfile
+free
+
+
+# 
+
+sudo vi /etc/fstab
+
+tmpfs		/tmp		tmpfs	defaults,size=16m,noatime,mode=1777	0	0
+tmpfs		/var/tmp	tmpfs	defaults,size=16m,noatime,mode=1777	0	0
+tmpfs		/var/log	tmpfs	defaults,size=32m,noatime,mode=755	0	0
+
+
