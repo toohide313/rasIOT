@@ -216,7 +216,7 @@ if __name__ == '__main__':
 		import urllib2
 
 		password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-		password_mgr.add_password(None, 'http://dons.sakura.ne.jp', 'oikawa', '6404')
+		password_mgr.add_password(None, 'http://dons.sakura.ne.jp', '<ID>', '<PASS>')
 
 		handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 		opener = urllib2.build_opener(handler)
