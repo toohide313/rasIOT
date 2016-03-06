@@ -19,36 +19,40 @@ t_fine = 0.0
 def initGPIO(gpionum):
         path = "/sys/class/gpio/gpio" + gpionum
         if ( os.path.isdir(path) == 0 ):
-                print "gpio %s not setup" % gpionum
+#                print "gpio %s not setup" % gpionum
                 f = open('/sys/class/gpio/export', 'w')
                 f.write(str(gpionum))
                 f.close()
         else:
                 return
-        fpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
-        if ( os.path.isfile(fpath) == 1 ):
-                f = open(fpath, 'w')
-                f.write("out")
-                f.close()
 
 def getGPIO(gpionum):
         initGPIO(gpionum)
-        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
         f = open(vpath , 'r')
         status = f.readline()
         status = status.rstrip()
-#       print "get %s" % gpionum
-#       print "val %s" % status
-        return status
+#	print "get %s" % gpionum
+#	print "val %s" % status
+	if ( status == "in" ):
+		return "0"
+	if ( status == "out" ):
+		return "1"
+        return 0
 
 def setGPIO(gpionum,val):
         initGPIO(gpionum)
-        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
         f = open(vpath, 'w')
-        f.write(val)
+	if ( val == "0" ):
+        	f.write("in")
+#		print "write in"
+	if ( val == "1" ):
+		f.write("out")
+#		print "write out"
         f.close()
-#       print "set %s" % gpionum
-#       print "val %s" % val
+#	print "set %s" % gpionum
+#	print "val %s" % val
 
 def writeReg(reg_address, data):
 	bus.write_byte_data(i2c_address,reg_address,data)
@@ -216,7 +220,7 @@ if __name__ == '__main__':
 		import urllib2
 
 		password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-		password_mgr.add_password(None, 'http://dons.sakura.ne.jp', '<ID>', '<PASS>')
+		password_mgr.add_password(None, 'http://dons.sakura.ne.jp', '<ID>', '<PW>')
 
 		handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 		opener = urllib2.build_opener(handler)
