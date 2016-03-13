@@ -5,6 +5,8 @@ import time
 from socket import gethostname
 from ConfigParser import SafeConfigParser
 
+i2c_status = False
+
 bus_number  = 1
 i2c_address = 0x76
 
@@ -208,15 +210,20 @@ def setup():
 	writeReg(0xF4,ctrl_meas_reg)
 	writeReg(0xF5,config_reg)
 
-
-setup()
-get_calib_param()
-
-
 if __name__ == '__main__':
 	try:
-		para = readData() + readGPIO()
+                setup()
+                get_calib_param()
+                i2c_status = True
+        except:
+        	i2c_status = False
 
+        try:
+		para = readData()
+		
+		if i2c_status:
+		  para = para + readGPIO()
+		  
 		import urllib2
 
 		password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
@@ -245,8 +252,3 @@ if __name__ == '__main__':
 
 	except KeyboardInterrupt:
 		pass
-
-
-
-
-
