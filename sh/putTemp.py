@@ -21,40 +21,34 @@ t_fine = 0.0
 def initGPIO(gpionum):
         path = "/sys/class/gpio/gpio" + gpionum
         if ( os.path.isdir(path) == 0 ):
-#                print "gpio %s not setup" % gpionum
-                f = open('/sys/class/gpio/export', 'w')
-                f.write(str(gpionum))
-                f.close()
-        else:
-                return
+          f = open('/sys/class/gpio/export', 'w')
+          f.write(str(gpionum))
+          f.close()
 
-def getGPIO(gpionum):
-        initGPIO(gpionum)
         vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
         f = open(vpath , 'r')
         status = f.readline()
         status = status.rstrip()
-#	print "get %s" % gpionum
-#	print "val %s" % status
-	if ( status == "in" ):
-		return "0"
-	if ( status == "out" ):
-		return "1"
-        return 0
+        f.close()
+
+        if status != "out":
+          f = open(vpath, 'w')
+          f.write("out")
+          f.close()
+
+def getGPIO(gpionum):
+        initGPIO(gpionum)
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
+        f = open(vpath , 'r')
+        status = f.readline()
+        return status.rstrip()
 
 def setGPIO(gpionum,val):
         initGPIO(gpionum)
-        vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
+        vpath = "/sys/class/gpio/gpio" + gpionum + "/value"
         f = open(vpath, 'w')
-	if ( val == "0" ):
-        	f.write("in")
-#		print "write in"
-	if ( val == "1" ):
-		f.write("out")
-#		print "write out"
+        f.write(val)
         f.close()
-#	print "set %s" % gpionum
-#	print "val %s" % val
 
 def writeReg(reg_address, data):
 	bus.write_byte_data(i2c_address,reg_address,data)
@@ -113,7 +107,13 @@ def readGPIO():
 		str = str + "&gpio"+word+"="+getGPIO(word)
 	return str
 
-def readData():
+def readCPU():
+	hw_cpu = compensate_CPU()
+	hw_clock = compensate_CLOCK()
+
+	return "hw_temp="+hw_cpu+"&hw_clock="+hw_clock
+	
+def readBM280():
 	data = []
 	for i in range (0xF7, 0xF7+8):
 		data.append(bus.read_byte_data(i2c_address,i))
@@ -121,13 +121,11 @@ def readData():
 	temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
 	hum_raw  = (data[6] << 8)  |  data[7]
 	
-	hw_cpu = compensate_CPU()
-	hw_clock = compensate_CLOCK()
 	temp = compensate_T(temp_raw)
 	pressure = compensate_P(pres_raw)
 	humid = compensate_H(hum_raw)
 
-	return "hw_temp="+hw_cpu+"&hw_clock="+hw_clock+"&temp="+temp+"&humid="+humid+"&pressure="+pressure
+	return "temp="+temp+"&humid="+humid+"&pressure="+pressure
 
 def compensate_CPU():
 	f = open("/sys/class/thermal/thermal_zone0/temp","r")
@@ -139,7 +137,6 @@ def compensate_CPU():
 def compensate_CLOCK():
 	f = open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq","r")
 	for t in f:
-	#	print "CPU CLOCK:"+t[:2]+"."+t[2:] ,
 		clock = t.rstrip()
 	f.close()
 	return clock
@@ -219,10 +216,10 @@ if __name__ == '__main__':
         	i2c_status = False
 
         try:
-		para = readData()
+		para = readCPU() + readGPIO()
 		
 		if i2c_status:
-		  para = para + readGPIO()
+		  para = para + "&" + readBM280()
 		  
 		import urllib2
 
