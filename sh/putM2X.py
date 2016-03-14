@@ -12,6 +12,9 @@ i2c_address = 0x76
 
 bus = smbus.SMBus(bus_number)
 
+m2x_dev_name = ''
+m2x_api_key  = ''
+
 digT = []
 digP = []
 digH = []
@@ -207,6 +210,7 @@ def setup():
 	writeReg(0xF4,ctrl_meas_reg)
 	writeReg(0xF5,config_reg)
 
+
 if __name__ == '__main__':
 	try:
                 setup()
@@ -221,31 +225,17 @@ if __name__ == '__main__':
 		if i2c_status:
 		  para = para + "&" + readBM280()
 		  
-		import urllib2
+		stream_name = 'CPUTemp'
+		rvalue = float( compensate_CPU() ) / 1000
 
-		password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-		password_mgr.add_password(None, 'http://dons.sakura.ne.jp', 'oikawa', '6404')
-
-		handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-		opener = urllib2.build_opener(handler)
-		urllib2.install_opener(opener)
-		url_str = 'http://dons.sakura.ne.jp/sv/setTemp.cgi'
-		param_str = '?node='+gethostname()+"&"+para
-		f = urllib2.urlopen( url_str + param_str )
-
-#		print "get:"+url_str+param_str
-		# 取得した内容を出力する
-#		print f.read()
-		cnt = 0
-		for str in f.readlines():
-			word = str.split()
-			cnt = cnt + 1
-#			print " %d " % cnt
-			if ( "gpio" in word[0] ) and ( len(word) == 2 ):
-				t = word[0][4:]
-#				print " %s " % word
-#				print " %s " % t
-				setGPIO(t,word[1])
+		uri_str = '/v2/devices/' + m2x_dev_name + '/streams/' + stream_name + '/value'
+		header_str = { 'X-M2X-KEY': m2x_api_key, 'Content-Type': 'application/json' }
+		data_str = "{ \"value\": "+ str(rvalue) +" }"
+		import urllib
+		import httplib     
+		connection = httplib.HTTPConnection('api-m2x.att.com:80')
+		connection.request('PUT', uri_str, data_str, header_str)
+		response = connection.getresponse()
 
 	except KeyboardInterrupt:
 		pass
