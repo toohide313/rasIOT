@@ -28,7 +28,7 @@ def initGPIO(gpionum):
         f.write(str(gpionum))
         f.close()
 
-	vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
+    vpath = "/sys/class/gpio/gpio" + gpionum + "/direction"
     f = open(vpath , 'r')
     status = f.readline()
     status = status.rstrip()
@@ -105,8 +105,10 @@ def readConfig():
 	parser = SafeConfigParser()
 	parser.read(filename)
 
-    m2x_dev_name = parser.get('m2x','device_id')
-    m2x_api_key = parser.get('m2x','api_key')
+    	global m2x_dev_name
+    	m2x_dev_name = parser.get('m2x','device_id')
+    	global m2x_api_key
+    	m2x_api_key = parser.get('m2x','api_key')
 
 	str=""
 	words = parser.get('gpio','gpio')
@@ -224,17 +226,27 @@ def putM2X(stream_name,rvalue):
 	connection.request('PUT', uri_str, data_str, header_str)
 	response = connection.getresponse()
 
+#	print uri_str
+#	print data_str
+#	print header_str
+#	print response.msg
+
 if __name__ == '__main__':
-	try:
+    try:
         setup()
         get_calib_param()
         i2c_status = True
     except:
     	i2c_status = False
 
-	para = readCPU() + readGPIO()
+	para = readCPU() + readConfig()
 
 	if i2c_status:
 	  para = para + "&" + readBM280()
 
-    putM2X('CPUTemp',float( compensate_CPU() ) / 1000)
+        putM2X('CPUTemp',float( compensate_CPU() ) / 1000)
+	
+	if i2c_status:
+          putM2X('temperature',float( compensate_CPU() ) / 1000)
+          putM2X('humid',float( compensate_CPU() ) / 1000)
+          putM2X('pressure',float( compensate_CPU() ) / 1000)
